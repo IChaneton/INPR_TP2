@@ -337,6 +337,7 @@ function mousePressed() {
 
   // reset
   if (mouseX > width * 0.95 && mouseX < width && mouseY > height * 0.975 && mouseY < height) {
+    time_counter = 0;
     rotating = false;
 
     speed_control_X = width * 0.3;
