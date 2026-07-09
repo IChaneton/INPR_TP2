@@ -215,7 +215,7 @@ function draw() {
   line(scale_control_X_min, scale_control_Y, scale_control_X_max, scale_control_Y);
   noStroke();
 
-  textFont('Arial');
+  textFont('Arial Black');
   if (play) {
     fill(0, 50, 100);
     circle(play_control_X, play_control_Y, controller_radio / 2);
