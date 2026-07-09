@@ -1,24 +1,26 @@
+
+// ==========================================================
+// HOMENAJE A BRIDGET RILEY - Versión web (p5.js) de TP2.pde
+// Traducción directa del sketch original de Processing.
+// El SinOsc de processing.sound se reemplaza por p5.Oscillator.
+// ==========================================================
+
 let tono;
-let toneStarted = false;
 let volumen = 0.5;
 let frecuencia;
 
-let pA_x, pA_y; // punta de curva A
-let pB_x, pB_y; // punta de curva B
+let pA_x, pA_y;   // punta de curva A
+let pB_x, pB_y;   // punta de curva B
 
 let contr_A_x, contr_A_y; // punto de control A
 let contr_B_x, contr_B_y; // punto de control B
 
-let width_steps = 21; // cantidad de pasos a lo largo del ancho de la pantalla
-let time_counter; // contador de tiempo para determinar el paso actual
-let ultimoTiempo; // variable para almacenar el tiempo del último paso
-let speed; // velocidad de reproducción del tiempo
+const width_steps = 21; // cantidad de pasos a lo largo del ancho de la pantalla
+let time_counter = 0;   // contador de tiempo para determinar el paso actual
+let ultimoTiempo = 0;   // tiempo del último paso
+let speed;              // velocidad de reproducción del tiempo
 
-let controller_radio; // radio de los círculos de control
-
-let play;
-let play_control_X, play_control_Y; // posición del boton de play
-
+let controller_radio;      // radio de los círculos de control
 let speed_control_X, speed_control_Y;
 let speed_control_X_min, speed_control_X_max;
 
@@ -34,11 +36,11 @@ let rotate_control_X, rotate_control_Y;
 let rotating = false;
 let backgroundColor;
 
+let audioStarted = false;
+
 function setup() {
   createCanvas(1000, 800);
   colorMode(HSB, 360, 100, 100, 100);
-
-  play = false;
   backgroundColor = color(40, 10, 100);
   scale_factor = 1.0;
 
@@ -57,20 +59,17 @@ function setup() {
   speed = 5;
   ultimoTiempo = 0;
 
-  play_control_X = width * 0.15;
-  play_control_Y = height * 0.95;
-
-  speed_control_X = width * 0.3;
+  speed_control_X = width * 0.225;
   speed_control_Y = height * 0.95;
   speed_control_X_min = speed_control_X - width * 0.05;
   speed_control_X_max = speed_control_X + width * 0.05;
 
-  volume_control_X = width * 0.48;
+  volume_control_X = width * 0.4;
   volume_control_Y = height * 0.95;
   volume_control_X_min = volume_control_X - 50;
   volume_control_X_max = volume_control_X + 50;
 
-  scale_control_X = width * 0.65;
+  scale_control_X = width * 0.575;
   scale_control_Y = height * 0.95;
   scale_control_X_min = scale_control_X - width * 0.05;
   scale_control_X_max = scale_control_X + width * 0.05;
@@ -80,23 +79,16 @@ function setup() {
 
   tono = new p5.Oscillator('sine');
   tono.amp(0);
+  tono.start();
 
   frecuencia = 100;
+
+  noStroke();
 }
 
 function draw() {
   background(backgroundColor);
   noStroke();
-
-  if (play) {
-    if (!toneStarted) {
-      tono.start();
-      toneStarted = true;
-    }
-  } else if (toneStarted) {
-    tono.stop();
-    toneStarted = false;
-  }
 
   speed = map(speed_control_X, speed_control_X_min, speed_control_X_max, 1, 10);
   volumen = map(volume_control_X, volume_control_X_min, volume_control_X_max, 0, 2);
@@ -122,47 +114,46 @@ function draw() {
   }
   translate(-width / 2, -height / 2);
 
-  let segment_width = width / width_steps;
-  let current_step = int(time_counter);
+  const segment_width = width / width_steps;
+  const current_step = int(time_counter);
 
-  let current_p3_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, current_step * (1.0 / width_steps));
-  let current_p4_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, (current_step + 1) * (1.0 / width_steps));
-  let current_p4_y = bezierPoint(pA_y, contr_A_y, contr_B_y, pB_y, (current_step + 1) * (1.0 / width_steps));
-  let grosor_banda_activa = current_p4_x - current_p3_x;
+  const current_p3_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, current_step * (1.0 / width_steps));
+  const current_p4_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, (current_step + 1) * (1.0 / width_steps));
+  const current_p4_y = bezierPoint(pA_y, contr_A_y, contr_B_y, pB_y, (current_step + 1) * (1.0 / width_steps));
+  const grosor_banda_activa = current_p4_x - current_p3_x;
 
-  let factor_tiempo = 2.5;
-  let intervaloMilis = abs(grosor_banda_activa) * factor_tiempo / speed;
+  const factor_tiempo = 25.0;
+  const intervaloMilis = abs(grosor_banda_activa) * factor_tiempo / speed;
 
-  if (frameCount - ultimoTiempo >= intervaloMilis && play) {
+  if (millis() - ultimoTiempo >= intervaloMilis) {
     time_counter += 1;
-    ultimoTiempo = frameCount;
+    ultimoTiempo = millis();
   }
-
   time_counter = time_counter % width_steps;
-  let current_p1_x = (current_step + 1) * segment_width;
-  let screenX_freq_factor = current_p4_x / current_p1_x;
+
+  const current_p1_x = (current_step + 1) * segment_width;
+  const screenX_freq_factor = current_p4_x / current_p1_x;
 
   if (current_step % 2 === 0) {
     frecuencia = (1.0 / current_p4_y) * screenX_freq_factor * 100000;
     frecuencia = constrain(frecuencia, 100, 2000);
-    if (play) {
-      tono.amp(volumen, 0.05);
+    if (audioStarted) {
+      tono.amp(volumen * 0.3, 0.05); // *0.3 para no saturar el output web
       tono.freq(frecuencia);
     }
   }
-
   noStroke();
 
   // INICIO DE DIBUJO DE BANDAS
   for (let i = 0; i < width_steps; i += 1) {
-    let p1_x = (i + 1) * segment_width;
-    let p2_x = i * segment_width;
-    let p3_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, i * (1.0 / width_steps));
-    let p3_y = bezierPoint(pA_y, contr_A_y, contr_B_y, pB_y, i * (1.0 / width_steps));
-    let p4_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, (i + 1) * (1.0 / width_steps));
-    let p4_y = bezierPoint(pA_y, contr_A_y, contr_B_y, pB_y, (i + 1) * (1.0 / width_steps));
+    const p1_x = (i + 1) * segment_width;
+    const p2_x = i * segment_width;
+    const p3_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, i * (1.0 / width_steps));
+    const p3_y = bezierPoint(pA_y, contr_A_y, contr_B_y, pB_y, i * (1.0 / width_steps));
+    const p4_x = bezierPoint(pA_x, contr_A_x, contr_B_x, pB_x, (i + 1) * (1.0 / width_steps));
+    const p4_y = bezierPoint(pA_y, contr_A_y, contr_B_y, pB_y, (i + 1) * (1.0 / width_steps));
 
-    let color_activo = map(frecuencia, 0, 1000, 0, 360);
+    const color_activo = map(frecuencia, 0, 1000, 0, 360);
 
     if (i % 2 === 0) {
       if (current_step === i) {
@@ -215,26 +206,6 @@ function draw() {
   line(scale_control_X_min, scale_control_Y, scale_control_X_max, scale_control_Y);
   noStroke();
 
-  textFont('Arial');
-  if (play) {
-    fill(0, 50, 100);
-    circle(play_control_X, play_control_Y, controller_radio / 2);
-    textAlign(CENTER, CENTER);
-    textStyle(BOLD);
-    textSize(10);
-    fill(0, 0, 0);
-    text("stop", play_control_X, play_control_Y);
-  } else {
-    fill(120, 50, 100);
-    circle(play_control_X, play_control_Y, controller_radio / 2);
-    textAlign(CENTER, CENTER);
-    textStyle(BOLD);
-    textSize(10);
-    fill(0, 0, 0);
-    text("play", play_control_X, play_control_Y);
-  }
-
-  fill(backgroundColor);
   circle(speed_control_X, speed_control_Y, controller_radio / 2);
   circle(volume_control_X, volume_control_Y, controller_radio / 2);
   circle(scale_control_X, scale_control_Y, controller_radio / 2);
@@ -248,23 +219,15 @@ function draw() {
   // Título
   fill(0);
   rect(width * 0.1, height * 0.025, width * 0.8, controller_radio, width * 0.01);
-  textStyle(NORMAL);
   textSize(15);
   fill(backgroundColor);
   textAlign(RIGHT, CENTER);
-  text("VEL    ", speed_control_X_min, speed_control_Y);
-  text("VOL    ", volume_control_X_min, volume_control_Y);
-  text("ESC    ", scale_control_X_min, scale_control_Y);
-  textStyle(BOLD);
-  textSize(10);
-  textAlign(CENTER, CENTER);
-  fill(0, 0, 0);
-  text("INV", rotate_control_X, rotate_control_Y);
-  textStyle(NORMAL);
+  text("VEL      ", speed_control_X_min, speed_control_Y);
+  text("VOL      ", volume_control_X_min, volume_control_Y);
+  text("ESC      ", scale_control_X_min, scale_control_Y);
+  text("INV        ", rotate_control_X, rotate_control_Y);
   textAlign(LEFT, CENTER);
-  fill(backgroundColor);
-  textSize(15);
-  text("       " + int(frecuencia) + " Hz", scale_control_X_max, scale_control_Y);
+  text("              Frec.: " + int(frecuencia) + " Hz", scale_control_X_max, scale_control_Y);
   fill(0, 100, 50);
   textAlign(RIGHT, BOTTOM);
   text("reset ", width, height);
@@ -272,35 +235,35 @@ function draw() {
   textAlign(CENTER, CENTER);
   fill(backgroundColor);
   textSize(25);
-  text("HOMENAJE A BRIDGET RILEY", width / 2, height * 0.05);
+  text("HOMENAJE A BRIDJET RILEY", width / 2, height * 0.05);
 }
 
 function mouseDragged() {
   // Control de velocidad
   if (mouseX >= speed_control_X_min && mouseX <= speed_control_X_max &&
-    mouseY >= speed_control_Y - controller_radio / 2 && mouseY <= speed_control_Y + controller_radio / 2) {
+      mouseY >= speed_control_Y - controller_radio / 2 && mouseY <= speed_control_Y + controller_radio / 2) {
     speed_control_X = constrain(mouseX, speed_control_X_min, speed_control_X_max);
     return;
   }
 
   // Control de volumen
   if (mouseX >= volume_control_X_min && mouseX <= volume_control_X_max &&
-    mouseY >= volume_control_Y - controller_radio / 2 && mouseY <= volume_control_Y + controller_radio / 2) {
+      mouseY >= volume_control_Y - controller_radio / 2 && mouseY <= volume_control_Y + controller_radio / 2) {
     volume_control_X = constrain(mouseX, volume_control_X_min, volume_control_X_max);
     return;
   }
 
   // Control de escala
   if (mouseX >= scale_control_X_min && mouseX <= scale_control_X_max &&
-    mouseY >= scale_control_Y - controller_radio / 2 && mouseY <= scale_control_Y + controller_radio / 2) {
+      mouseY >= scale_control_Y - controller_radio / 2 && mouseY <= scale_control_Y + controller_radio / 2) {
     scale_control_X = constrain(mouseX, scale_control_X_min, scale_control_X_max);
     return;
   }
 
-  // Traducción de las coordenadas del mouse a un sistema de coordenadas virtuales considerando la escala
-  let centroX = width / 2.0;
-  let centroY = height / 2.0;
-  let f_escala = scale_factor;
+  // Traducción de coordenadas del mouse a coordenadas virtuales considerando la escala
+  const centroX = width / 2.0;
+  const centroY = height / 2.0;
+  const f_escala = scale_factor;
 
   let mouseVirtualX = centroX + (mouseX - centroX) / f_escala;
   let mouseVirtualY = centroY + (mouseY - centroY) / f_escala;
@@ -330,18 +293,26 @@ function mouseDragged() {
 }
 
 function mousePressed() {
-  // Verificación de si el mouse está dentro del radio del control de rotación
+  // Habilita el audio en el primer click (requisito de los navegadores)
+  if (!audioStarted) {
+    userStartAudio();
+    audioStarted = true;
+    const overlay = document.getElementById('startOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  // Control de rotación
   if (isInRadio(controller_radio, rotate_control_X, rotate_control_Y, mouseX, mouseY)) {
     rotating = !rotating;
   }
 
-  // reset
+  // Reset
   if (mouseX > width * 0.95 && mouseX < width && mouseY > height * 0.975 && mouseY < height) {
     rotating = false;
 
-    speed_control_X = width * 0.3;
-    volume_control_X = width * 0.48;
-    scale_control_X = width * 0.65;
+    scale_control_X = width * 0.575;
+    speed_control_X = width * 0.225;
+    volume_control_X = width * 0.4;
 
     pA_x = width * 0.3;
     pA_y = height * 0.6;
@@ -353,12 +324,17 @@ function mousePressed() {
     contr_B_x = contr_A_x;
     contr_B_y = contr_A_y;
   }
-
-  if (isInRadio(controller_radio, play_control_X, play_control_Y, mouseX, mouseY)) {
-    play = !play;
-  }
 }
 
 function isInRadio(radio, pX, pY, mX, mY) {
   return dist(pX, pY, mX, mY) < radio;
 }
+
+// El overlay también dispara el arranque de audio al clickear
+document.getElementById('startOverlay').addEventListener('click', () => {
+  if (!audioStarted) {
+    userStartAudio();
+    audioStarted = true;
+  }
+  document.getElementById('startOverlay').style.display = 'none';
+});

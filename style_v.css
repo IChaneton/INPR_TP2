@@ -1,0 +1,26 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #FFF7E6;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+  }
